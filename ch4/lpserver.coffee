@@ -20,11 +20,11 @@ server.on 'message', ->
     if cycles++ > 3
         # Randomly lag
         if Math.floor(Math.random()*10) == 0
-            console.log "[info] server simulating a lag"
+            console.log "[debug] server simulating a lag"
             wait = 1000
         # Or randomly crash
         else if Math.floor(Math.random()*10) == 0
-            console.log "[info] server simulating a crash"
+            console.log "[debug] server simulating a crash"
             server.close()
             process.exit()
 
