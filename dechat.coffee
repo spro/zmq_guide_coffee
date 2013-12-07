@@ -2,7 +2,8 @@ zmq = require 'zmq'
 
 listen = (masked) ->
     listener = zmq.socket 'sub'
-    for n in [1..20]
+    for n in [80..90]
+        console.log "connecting to #{ masked }.#{ n }"
         listener.connect "tcp://#{ masked }.#{ n }:9000"
     listener.subscribe ''
 
@@ -20,9 +21,8 @@ main = (broadcast = false) ->
         broadcaster = zmq.socket 'pub'
         broadcaster.bind "tcp://#{ ip }:9000"
 
-        setTimeout ->
-            broadcaster.send 'testing ' + user
-            broadcaster.close()
-        , 500
+        process.stdin.resume()
+        process.stdin.on 'data', (data) ->
+            broadcaster.send user + ': ' + data.toString().trim()
 
 main(true)
