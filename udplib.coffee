@@ -1,6 +1,7 @@
 dgram = require 'dgram'
 os = require 'os'
-PING_PORT = 9999
+
+PING_PORT = 5670
 
 local_ip = ->
     interfaces = os.networkInterfaces()
