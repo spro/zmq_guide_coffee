@@ -21,7 +21,7 @@ class UDPBroadcaster
         @socket = socket
 
     send: (message) ->
-        message = new Buffer message.toString()
+        message = new Buffer message if typeof message == 'string'
         @socket.send message, 0, message.length, PING_PORT, @broadcast
 
     recv: (message, sender) ->
