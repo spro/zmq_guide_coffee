@@ -36,10 +36,10 @@ class PeerAgent
         
     recv_beacon: (beacon, sender) ->
         now = new Date().getTime()
-        #return if sender.address == @udp.address
         beacon_data = read_beacon beacon
         return if !beacon_data?
         uuid = beacon_data.uuid.toString 'hex'
+        return if uuid == UUID.toString 'hex'
         if !@peers[uuid]?
             console.log "JOINED #{ uuid }"
         @peers[uuid] = now
