@@ -33,9 +33,12 @@ class PeerAgent
         @udp.recv = => @recv_beacon arguments...
         @incoming = zmq.socket 'router'
         @incoming.bind "tcp://*:#{ PORT }"
-        @incoming.on 'message', console.log
+        @incoming.on 'message', (=> @recv_message arguments...)
         @peer_last_seen = {}
         @peer_outgoing = {}
+        process.stdin.resume()
+        process.stdin.on 'data', (data) =>
+            @broadcast data.toString().trim()
         setInterval (=> @send_beacon()), 1000
         setInterval (=> @reap_peers()), 1000
         
@@ -50,13 +53,19 @@ class PeerAgent
             outgoing = zmq.socket 'dealer'
             outgoing.identity = UUID.toString 'hex'
             outgoing.connect "tcp://#{ sender.address }:#{ beacon_data.port }"
-            console.log "tcp://#{ sender.address }:#{ beacon_data.port }"
             outgoing.send 'ehllo'
             @peer_outgoing[uuid] = outgoing
         @peer_last_seen[uuid] = now
 
+    broadcast: (message) ->
+        for uuid, outgoing of @peer_outgoing
+            outgoing.send message
+
     send_beacon: ->
         @udp.send BEACON
+
+    recv_message: (sender, message) ->
+        console.log "MESSAGE #{ sender.toString() } `#{ message.toString() }`"
 
     reap_peers: ->
         now = new Date().getTime()
