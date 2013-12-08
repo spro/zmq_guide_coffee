@@ -49,8 +49,8 @@ class PeerAgent
             console.log "JOINED #{ uuid }"
             outgoing = zmq.socket 'dealer'
             outgoing.identity = UUID.toString 'hex'
-            outgoing.connect "tcp://#{ sender.address }:#{ sender.port }"
-            console.log "tcp://#{ sender.address }:#{ sender.port }"
+            outgoing.connect "tcp://#{ sender.address }:#{ beacon_data.port }"
+            console.log "tcp://#{ sender.address }:#{ beacon_data.port }"
             outgoing.send 'ehllo'
             @peer_outgoing[uuid] = outgoing
         @peer_last_seen[uuid] = now
