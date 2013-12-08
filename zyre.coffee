@@ -32,7 +32,7 @@ class PeerAgent
         @udp = new udplib.UDPBroadcaster()
         @udp.recv = => @recv_beacon arguments...
         @incoming = zmq.socket 'router'
-        @incoming.bind "tcp://:#{ PORT }"
+        @incoming.bind "tcp://*:#{ PORT }"
         @incoming.on 'message', console.log
         @peer_last_seen = {}
         @peer_outgoing = {}
@@ -47,10 +47,13 @@ class PeerAgent
         return if uuid == UUID.toString 'hex'
         if !@peer_last_seen[uuid]?
             console.log "JOINED #{ uuid }"
+            outgoing = zmq.socket 'dealer'
+            outgoing.identity = UUID.toString 'hex'
+            outgoing.connect "tcp://#{ sender.address }:#{ sender.port }"
+            console.log "tcp://#{ sender.address }:#{ sender.port }"
+            outgoing.send 'ehllo'
+            @peer_outgoing[uuid] = outgoing
         @peer_last_seen[uuid] = now
-        @peer_outgoing[uuid] = zmq.socket 'dealer'
-        @peer_outgoing[uuid].connect "tcp://#{ sender.address }:#{ sender.port }"
-        @peer_outgoing[uuid].send 'ehllo'
 
     send_beacon: ->
         @udp.send BEACON
