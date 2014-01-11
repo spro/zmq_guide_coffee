@@ -1,6 +1,7 @@
 crypto = require 'crypto'
 udplib = require './udplib'
 zmq = require 'zmq'
+util = require 'util'
 
 HEADER = 'ZRE'
 VERSION = 1
@@ -19,6 +20,7 @@ BEACON = build_beacon()
 read_beacon = (beacon) ->
     return null if beacon.length != 22
     return null if beacon.asciiSlice(0, 3) != 'ZRE'
+    #console.log "1:(#{ beacon[20] }) 2: (#{ beacon[21] })"
     beacon_data =
         version: beacon.readUInt8 3
         uuid: beacon.slice 4, 20
@@ -38,6 +40,7 @@ class PeerAgent
         @incoming.on 'message', (=> @recv_message arguments...)
         @peer_last_seen = {}
         @peer_outgoing = {}
+        @peer_usernames = {}
         process.stdin.resume()
         process.stdin.on 'data', (data) =>
             @broadcast data.toString().trim()
@@ -47,11 +50,12 @@ class PeerAgent
     recv_beacon: (beacon, sender) ->
         now = new Date().getTime()
         beacon_data = read_beacon beacon
+        #console.log util.inspect beacon_data
         return if !beacon_data?
         uuid = beacon_data.uuid.toString 'hex'
         return if uuid == UUID.toString 'hex'
         if !@peer_last_seen[uuid]?
-            console.log "JOINED #{ uuid }"
+            console.log "JOINED #{ uuid } (#{ sender.address }:#{ beacon_data.port })"
             outgoing = zmq.socket 'dealer'
             outgoing.identity = UUID.toString 'hex'
             outgoing.connect "tcp://#{ sender.address }:#{ beacon_data.port }"
@@ -70,8 +74,16 @@ class PeerAgent
     send_beacon: ->
         @udp.send BEACON
 
-    recv_message: (sender, message) ->
-        console.log "MESSAGE #{ sender.toString() } `#{ message.toString() }`"
+    recv_message: (sender, message_data) ->
+        #console.log "MESSAGE #{ sender.toString() } `#{ message.toString() }`"
+        message = JSON.parse message_data.toString()
+        if message.type == 'message'
+            if username = @peer_usernames[sender]
+                sender = username
+            console.log "#{ sender.toString() }: #{ message.body }"
+        else if message.type == 'hello'
+            console.log "#{ sender.toString() } -> #{ message.username }"
+            @peer_usernames[sender] = message.username
 
     reap_peers: ->
         now = new Date().getTime()
@@ -82,6 +94,6 @@ class PeerAgent
                 delete @peer_outgoing[uuid]
                 delete @peer_last_seen[uuid]
 
-console.log "Starting up #{ UUID.toString 'hex' } at #{ udplib.local_ip() }"
+console.log "Starting up #{ UUID.toString 'hex' } at #{ udplib.local_ip() }:#{ PORT }"
 new PeerAgent()
 
